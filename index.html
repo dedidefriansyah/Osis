@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis PBB & Sertifikat Agustusan 2026 - SMPN 1 Muara Rupit</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@400;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
+    <!-- html2pdf.js for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                        cursive: ['Great Vibes', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom print preview and certificate style constraints */
+        .cert-border {
+            border: 10px solid #dc2626;
+            outline: 3px solid #fbbf24;
+            outline-offset: -7px;
+        }
+        
+        .watermark {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" opacity="0.04"><path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="%23dc2626"/></svg>');
+            background-repeat: repeat;
+        }
+
+        /* Certificate Dimensions for exact PDF conversion (16:9 Landscape) */
+        #certificate-element {
+            width: 960px;
+            height: 540px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-modal, #certificate-modal * {
+                visibility: visible;
+            }
+            #certificate-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
+
+    <!-- Header / Banner Header -->
+    <header class="bg-gradient-to-r from-red-700 via-red-600 to-red-800 text-white shadow-lg py-6 px-4 mb-8">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-red-600 text-2xl shadow">
+                    <i class="fa-solid fa-flag"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-wide">KUIS DASAR PBB 2026</h1>
+                    <p class="text-red-100 text-xs sm:text-sm">SMP Negeri 1 Muara Rupit - Semangat HUT RI ke-81</p>
+                </div>
+            </div>
+            <span class="bg-red-900/60 border border-red-400/40 text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-medal mr-1"></i> Sertifikat Otomatis
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-3xl mx-auto px-4">
+
+        <!-- NOTICE: USER HAS ALREADY COMPLETED THE QUIZ -->
+        <section id="section-completed" class="hidden bg-white rounded-2xl shadow-md p-8 text-center border-t-4 border-amber-500">
+            <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Anda Sudah Mengikuti Kuis Ini!</h2>
+            <p class="text-sm text-slate-600 mb-6 max-w-md mx-auto">Setiap siswa hanya diperbolehkan mengisi kuis ini <strong>satu kali</strong>. Anda dapat melihat kembali sertifikat hasil kuis Anda di bawah ini.</p>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 max-w-md mx-auto mb-6 text-left space-y-1">
+                <p class="text-xs text-slate-500">Nama: <span id="completed-nama" class="font-bold text-slate-800">-</span></p>
+                <p class="text-xs text-slate-500">Kelas: <span id="completed-kelas" class="font-bold text-slate-800">-</span></p>
+                <p class="text-xs text-slate-500">Regu: <span id="completed-regu" class="font-bold text-slate-800">-</span></p>
+                <p class="text-xs text-slate-500">Nilai Akhir: <span id="completed-score" class="font-bold text-red-600">-</span></p>
+            </div>
+
+            <button onclick="openCertificateModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl shadow transition inline-flex items-center gap-2">
+                <i class="fa-solid fa-award"></i>
+                <span>Lihat & Unduh Sertifikat Saya</span>
+            </button>
+        </section>
+
+        <!-- SECTION 1: FORM IDENTITAS SISWA -->
+        <section id="section-identitas" class="bg-white rounded-2xl shadow-md p-6 mb-8 border-t-4 border-red-600">
+            <div class="flex items-center gap-3 mb-4 border-b pb-3">
+                <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold">1</div>
+                <h2 class="text-lg font-bold text-slate-800">Identitas Peserta</h2>
+            </div>
+
+            <form id="form-identitas" onsubmit="event.preventDefault(); startQuiz();" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Siswa *</label>
+                    <input type="text" id="input-nama" required placeholder="Contoh: Muhammad Rizky Pratama" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kelas *</label>
+                        <select id="input-kelas" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition bg-white">
+                            <option value="">-- Pilih Kelas --</option>
+                            <!-- KELAS VII (VII A - VII H) -->
+                            <optgroup label="Kelas VII">
+                                <option value="VII A">VII A</option>
+                                <option value="VII B">VII B</option>
+                                <option value="VII C">VII C</option>
+                                <option value="VII D">VII D</option>
+                                <option value="VII E">VII E</option>
+                                <option value="VII F">VII F</option>
+                                <option value="VII G">VII G</option>
+                                <option value="VII H">VII H</option>
+                            </optgroup>
+                            <!-- KELAS VIII (VIII A - VIII G) -->
+                            <optgroup label="Kelas VIII">
+                                <option value="VIII A">VIII A</option>
+                                <option value="VIII B">VIII B</option>
+                                <option value="VIII C">VIII C</option>
+                                <option value="VIII D">VIII D</option>
+                                <option value="VIII E">VIII E</option>
+                                <option value="VIII F">VIII F</option>
+                                <option value="VIII G">VIII G</option>
+                            </optgroup>
+                            <!-- KELAS IX (IX A - IX G) -->
+                            <optgroup label="Kelas IX">
+                                <option value="IX A">IX A</option>
+                                <option value="IX B">IX B</option>
+                                <option value="IX C">IX C</option>
+                                <option value="IX D">IX D</option>
+                                <option value="IX E">IX E</option>
+                                <option value="IX F">IX F</option>
+                                <option value="IX G">IX G</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Regu Gerak Jalan *</label>
+                        <input type="text" id="input-regu" required placeholder="Contoh: Regu Putra Garuda / Pasukan 01" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                    <span>Mulai Kuis PBB</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </section>
+
+        <!-- SECTION 2: KUIS PBB (HIDDEN BY DEFAULT) -->
+        <section id="section-kuis" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8 border-t-4 border-amber-500">
+            <div class="flex items-center justify-between mb-6 border-b pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">2</div>
+                    <h2 class="text-lg font-bold text-slate-800">Soal Kuis PBB</h2>
+                </div>
+                <span class="text-xs font-semibold px-3 py-1 bg-slate-100 rounded-full text-slate-600">8 Soal Pilihan Ganda</span>
+            </div>
+
+            <form id="form-kuis" onsubmit="event.preventDefault(); calculateResult();" class="space-y-6">
+                <!-- Questions Container injected via JS -->
+                <div id="questions-list" class="space-y-6"></div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-lg">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Selesaikan & Terbitkan Sertifikat</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- MODAL / DISPLAY SERTIFIKAT HASIL -->
+        <div id="section-sertifikat" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="bg-white rounded-2xl max-w-5xl w-full p-4 md:p-6 shadow-2xl relative my-auto">
+                
+                <!-- Close / Action Buttons Header -->
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-4 no-print pb-3 border-b">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">Sertifikat Hasil Kuis PBB</h3>
+                        <p id="quiz-summary-text" class="text-xs text-slate-600 font-medium">Hasil Kuis: 0 Benar, 0 Salah | Nilai: 0</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-download-pdf" onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow transition">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>Unduh PDF (A4 Landscape)</span>
+                        </button>
+                        <button onclick="closeCertificate()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-2 rounded-xl text-sm transition">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CERTIFICATE HTML LAYOUT FOR PRINT/PDF (16:9 LANDSCAPE - TANPA LOGO) -->
+                <div class="overflow-x-auto flex justify-center p-2 bg-slate-200 rounded-xl">
+                    <div id="certificate-element" class="bg-white cert-border p-8 relative watermark flex flex-col justify-between text-slate-800 shadow-xl">
+                        
+                        <!-- Decorative Top Ribbon -->
+                        <div class="absolute top-0 right-0 w-28 h-28 overflow-hidden pointer-events-none">
+                            <div class="bg-red-600 text-white text-xs font-bold text-center py-1 absolute w-36 top-5 -right-9 rotate-45 shadow-md">
+                                AGUSTUS 2026
+                            </div>
+                        </div>
+
+                        <!-- 1. HEADER TANPA LOGO -->
+                        <div class="text-center border-b-2 border-red-600/30 pb-3 mb-2">
+                            <h4 class="font-bold text-xs uppercase tracking-widest text-slate-600">Panitia Peringatan HUT Kemerdekaan RI ke-81 Tahun 2026</h4>
+                            <h3 class="font-extrabold text-2xl text-red-700 tracking-wider font-serif uppercase">SMP NEGERI 1 MUARA RUPIT</h3>
+                            <p class="text-xs text-slate-500 font-medium">Kabupaten Musi Rawas Utara, Sumatera Selatan</p>
+                        </div>
+
+                        <!-- 2. SERTIFIKAT TITLE -->
+                        <div class="text-center my-1">
+                            <h2 class="font-serif text-3xl font-bold text-slate-800 tracking-wider underline decoration-red-600 decoration-2">SERTIFIKAT APRESIASI</h2>
+                            <p class="text-xs text-slate-600 font-semibold tracking-widest uppercase mt-1">Nomor: 081/OSIS-SMPN1MR/PBB/VIII/2026</p>
+                        </div>
+
+                        <!-- 3. CONTENT BODY -->
+                        <div class="text-center my-2 space-y-2">
+                            <p class="text-xs text-slate-600">Sertifikat ini diberikan secara bangga kepada:</p>
+                            <h1 id="cert-nama" class="font-extrabold text-2xl text-red-700 tracking-wide border-b-2 border-dashed border-red-400 inline-block px-8 py-0.5">NAMA SISWA</h1>
+                            
+                            <div class="flex justify-center items-center gap-6 text-sm font-bold text-slate-700 pt-1">
+                                <span>Kelas: <strong id="cert-kelas" class="text-slate-900">7A</strong></span>
+                                <span>•</span>
+                                <span>Regu Gerak Jalan: <strong id="cert-regu" class="text-slate-900">Garuda</strong></span>
+                            </div>
+
+                            <p class="text-xs text-slate-600 max-w-2xl mx-auto leading-relaxed pt-1">
+                                Atas keikutsertaan dan prestasinya dalam menyelesaikan <strong>Kuis Dasar Peraturan Baris Berbaris (PBB)</strong> dalam rangka menyemarakkan HUT RI ke-81 di SMP Negeri 1 Muara Rupit dengan raihan nilai akhir <strong id="cert-nilai" class="text-red-700 font-extrabold text-sm">100/100</strong>.
+                            </p>
+                        </div>
+
+                        <!-- 4. SIGNATURE & DATE FOOTER -->
+                        <div class="flex justify-between items-end pt-4 border-t border-slate-200">
+                            <!-- Left badge -->
+                            <div class="text-left">
+                                <div class="inline-flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
+                                    <i class="fa-solid fa-flag text-red-600 text-base"></i>
+                                    <div>
+                                        <p class="text-[10px] text-red-800 font-extrabold uppercase leading-none">Agustusan 2026</p>
+                                        <p class="text-[9px] text-slate-600 leading-none">HUT RI ke-81 • Muara Rupit</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Signature -->
+                            <div class="text-center">
+                                <p class="text-xs text-slate-600 mb-0.5">Muara Rupit, 17 Agustus 2026</p>
+                                <p class="text-xs font-bold text-slate-700">Pembina OSIS SMPN 1 Muara Rupit</p>
+                                
+                                <!-- Handwritten Style Signature SVG -->
+                                <div class="h-10 my-0.5 flex justify-center items-center">
+                                    <svg class="h-9 w-32" viewBox="0 0 150 40">
+                                        <path d="M10 25 C 20 5, 35 35, 45 15 C 55 5, 65 30, 85 20 C 100 10, 110 30, 130 15" stroke="#1e3a8a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                        <path d="M 30 22 Q 80 25 120 20" stroke="#1e3a8a" stroke-width="1.5" fill="none"/>
+                                    </svg>
+                                </div>
+
+                                <p class="text-xs font-extrabold text-slate-900 underline">Dedi Defriansyah, M.Pd.</p>
+                                <p class="text-[10px] text-slate-500 font-medium">NIP. 198607012025211088</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS LOGIC -->
+    <script>
+        // Data Soal Kuis PBB (8 Soal)
+        const PBB_QUESTIONS = [
+            {
+                q: "1. Apa sikap dasar yang harus dilakukan pertama kali saat mendengar aba-aba 'SIAP - GRAK'?",
+                options: [
+                    "Badan tegak, kaki rapat membentuk sudut 45 derajat, tangan mengepal di samping jahitan celana",
+                    "Kaki dibuka selebar bahu dengan kedua tangan di belakang pinggang",
+                    "Langsung melakukan jalan di tempat tanpa menunggu gerakan lain",
+                    "Duduk dengan rapi dan kepala menunduk"
+                ],
+                correct: 0
+            },
+            {
+                q: "2. Pada aba-aba 'ISTIRAHAT DI TEMPAT - GRAK', posisi kaki kiri bergerak ke arah mana?",
+                options: [
+                    "Kaki kiri digeser ke kiri selebar bahu",
+                    "Kaki kiri mundur satu langkah ke belakang",
+                    "Kaki kiri diangkat setinggi paha",
+                    "Kaki kiri menyilang di depan kaki kanan"
+                ],
+                correct: 0
+            },
+            {
+                q: "3. Berapa derajat arah putaran badan saat melaksanakan aba-aba 'HADAP KANAN - GRAK'?",
+                options: [
+                    "45 derajat ke kanan",
+                    "90 derajat ke kanan",
+                    "180 derajat memutar",
+                    "360 derajat putar penuh"
+                ],
+                correct: 1
+            },
+            {
+                q: "4. Gerakan memutar badan sebesar 180 derajat ke belakang dinamakan gerakan...",
+                options: [
+                    "Hadap Kiri",
+                    "Balik Kanan",
+                    "Serong Kanan",
+                    "Hormat Kanan"
+                ],
+                correct: 1
+            },
+            {
+                q: "5. Pada posisi 'HORMAT - GRAK', posisi telapak tangan kanan yang benar adalah...",
+                options: [
+                    "Mengepal erat di samping pelipis",
+                    "Ditempelkan di dada sebelah kiri",
+                    "Terbuka lurus dan dirapatkan, ujung jari telunjuk menempel di pelipis kanan",
+                    "Direnggangkan jari-jarinya di atas kepala"
+                ],
+                correct: 2
+            },
+            {
+                q: "6. Aba-aba pelaksanaan dalam PBB yang menggunakan peluit atau suara tegas dinamakan...",
+                options: [
+                    "Aba-aba petunjuk dan aba-aba peringatan",
+                    "Aba-aba pelaksanaan",
+                    "Aba-aba petunjuk, peringatan, dan pelaksanaan",
+                    "Aba-aba larangan"
+                ],
+                correct: 2
+            },
+            {
+                q: "7. Saat berjalan dalam barisan, langkah pertama yang diayunkan saat aba-aba 'MAJU - JALAN' selalu menggunakan kaki...",
+                options: [
+                    "Kaki kanan",
+                    "Kaki kiri",
+                    "Boleh kaki kanan atau kiri",
+                    "Kedua kaki melompat bersamaan"
+                ],
+                correct: 1
+            },
+            {
+                q: "8. Panjang langkah standar saat melakukan 'LANGKAH TEGAP MAJU' adalah sekitar...",
+                options: [
+                    "35 cm",
+                    "65 cm",
+                    "100 cm",
+                    "150 cm"
+                ],
+                correct: 1
+            }
+        ];
+
+        let userData = {
+            nama: '',
+            kelas: '',
+            regu: '',
+            score: 0,
+            correctCount: 0,
+            wrongCount: 0
+        };
+
+        // Render Questions On Load
+        function renderQuestions() {
+            const container = document.getElementById('questions-list');
+            container.innerHTML = '';
+
+            PBB_QUESTIONS.forEach((item, index) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-4 rounded-xl border border-slate-200';
+
+                let optionsHTML = '';
+                item.options.forEach((opt, optIdx) => {
+                    optionsHTML += `
+                        <label class="flex items-start gap-3 p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-red-50/50 cursor-pointer transition">
+                            <input type="radio" name="question_${index}" value="${optIdx}" required class="mt-1 text-red-600 focus:ring-red-500">
+                            <span class="text-xs sm:text-sm text-slate-700 font-medium">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <p class="font-bold text-slate-800 text-sm sm:text-base mb-3">${item.q}</p>
+                    <div class="space-y-2">${optionsHTML}</div>
+                `;
+
+                container.appendChild(qDiv);
+            });
+        }
+
+        // Check if user has already completed the quiz
+        function checkExistingAttempt() {
+            const savedAttempt = localStorage.getItem('pbb_quiz_attempt_2026');
+            if (savedAttempt) {
+                const data = JSON.parse(savedAttempt);
+                userData = data;
+
+                document.getElementById('section-identitas').classList.add('hidden');
+                document.getElementById('section-kuis').classList.add('hidden');
+                
+                document.getElementById('completed-nama').innerText = data.nama;
+                document.getElementById('completed-kelas').innerText = data.kelas;
+                document.getElementById('completed-regu').innerText = data.regu;
+                document.getElementById('completed-score').innerText = `${data.score} / 100 (${data.correctCount} Benar, ${data.wrongCount} Salah)`;
+                
+                document.getElementById('section-completed').classList.remove('hidden');
+
+                // Pre-fill Certificate Elements
+                updateCertificateDOM();
+                return true;
+            }
+            return false;
+        }
+
+        function startQuiz() {
+            if (localStorage.getItem('pbb_quiz_attempt_2026')) {
+                alert('Anda telah menyelesaikan kuis ini sebelumnya!');
+                return;
+            }
+
+            userData.nama = document.getElementById('input-nama').value.trim();
+            userData.kelas = document.getElementById('input-kelas').value;
+            userData.regu = document.getElementById('input-regu').value.trim();
+
+            if (!userData.nama || !userData.kelas || !userData.regu) {
+                alert('Harap isi semua identitas siswa terlebih dahulu.');
+                return;
+            }
+
+            document.getElementById('section-identitas').classList.add('hidden');
+            document.getElementById('section-kuis').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function calculateResult() {
+            let correctCount = 0;
+            const totalQuestions = PBB_QUESTIONS.length;
+
+            PBB_QUESTIONS.forEach((item, index) => {
+                const selected = document.querySelector(`input[name="question_${index}"]:checked`);
+                if (selected && parseInt(selected.value) === item.correct) {
+                    correctCount++;
+                }
+            });
+
+            const wrongCount = totalQuestions - correctCount;
+            const score = Math.round((correctCount / totalQuestions) * 100);
+
+            userData.correctCount = correctCount;
+            userData.wrongCount = wrongCount;
+            userData.score = score;
+
+            // Save One-Time Attempt in LocalStorage
+            localStorage.setItem('pbb_quiz_attempt_2026', JSON.stringify(userData));
+
+            updateCertificateDOM();
+            
+            // Hide quiz section & show modal
+            document.getElementById('section-kuis').classList.add('hidden');
+            document.getElementById('section-completed').classList.remove('hidden');
+            
+            // Update completed card UI
+            document.getElementById('completed-nama').innerText = userData.nama;
+            document.getElementById('completed-kelas').innerText = userData.kelas;
+            document.getElementById('completed-regu').innerText = userData.regu;
+            document.getElementById('completed-score').innerText = `${score} / 100 (${correctCount} Benar, ${wrongCount} Salah)`;
+
+            openCertificateModal();
+        }
+
+        function updateCertificateDOM() {
+            document.getElementById('quiz-summary-text').innerText = `Hasil Kuis: ${userData.correctCount} Benar, ${userData.wrongCount} Salah | Nilai Akhir: ${userData.score}`;
+            document.getElementById('cert-nama').innerText = userData.nama.toUpperCase();
+            document.getElementById('cert-kelas').innerText = userData.kelas;
+            document.getElementById('cert-regu').innerText = userData.regu;
+            document.getElementById('cert-nilai').innerText = `${userData.score} / 100`;
+        }
+
+        function openCertificateModal() {
+            document.getElementById('section-sertifikat').classList.remove('hidden');
+        }
+
+        function closeCertificate() {
+            document.getElementById('section-sertifikat').classList.add('hidden');
+        }
+
+        // Function Download PDF Fix (Ensures proper html2pdf capture without blank white screen)
+        function downloadPDF() {
+            const btn = document.getElementById('btn-download-pdf');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Memproses PDF...</span>`;
+            btn.disabled = true;
+
+            const element = document.getElementById('certificate-element');
+
+            // Set fixed dimensions temporarily for high quality capture
+            const opt = {
+                margin:       0,
+                filename:     `Sertifikat_PBB_2026_${userData.nama.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 1000
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = `<i class="fa-solid fa-file-pdf"></i> <span>Unduh PDF (A4 Landscape)</span>`;
+                btn.disabled = false;
+            }).catch(err => {
+                console.error("PDF generation error:", err);
+                alert("Gagal mengunduh PDF. Silakan coba lagi.");
+                btn.innerHTML = `<i class="fa-solid fa-file-pdf"></i> <span>Unduh PDF (A4 Landscape)</span>`;
+                btn.disabled = false;
+            });
+        }
+
+        // Initialize quiz questions
+        window.onload = function() {
+            renderQuestions();
+            checkExistingAttempt();
+        };
+    </script>
+</body>
+</html>
